@@ -1,0 +1,10 @@
+---
+# https://wiki.archlinux.org/index.php/XDG_Base_Directory
+
+# set to 'global' or 'local'
+xdg_config_scope: 'local'
+
+xdg_spec:
+  XDG_CONFIG_HOME: "{{ ansible_env.HOME }}/.config"
+  XDG_DATA_HOME: "{{ ansible_env.HOME }}/.local/share"
+  XDG_CACHE_HOME: "{{ ansible_env.HOME }}/.cache"

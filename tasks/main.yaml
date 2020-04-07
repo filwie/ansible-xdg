@@ -1,0 +1,31 @@
+---
+- name: check prerequisites
+  block:
+    - name: make sure scope is set correctly
+      assert:
+        that: xdg_config_scope in ['local', 'global']
+        fail_msg: "Scope is not set correctly."
+
+    - name: make sure facts are available
+      assert:
+        that: ansible_env is defined
+        fail_msg: "This role requires access to facts."
+
+- name: create xdg base directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    "{{ xdg_spec.values() | list }}"
+
+- name: update configs
+  blockinfile:
+    path: "{{ item.path }}"
+    block: '{{ item.block }}'
+    create: true
+  loop: "{{ xdg_update_configs }}"
+  become: true if xdg_config_scope == 'global' else false
+  notify: reset connection
+
+- name: flush handlers
+  meta: flush_handlers

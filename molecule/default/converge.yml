@@ -1,0 +1,19 @@
+---
+- name: Converge
+  hosts: all
+  pre_tasks:
+    - name: Install packages
+      package:
+        name:
+          - zsh
+          - fish
+          - npm
+      become: true
+  roles:
+    - role: xdg
+      vars:
+        xdg_config_scope: local
+
+    - role: xdg
+      vars:
+        xdg_config_scope: global
