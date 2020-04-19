@@ -24,7 +24,7 @@
     block: '{{ item.block }}'
     create: true
   loop: "{{ xdg_update_configs }}"
-  become: true if xdg_config_scope == 'global' else false
+  become: "{{ xdg_become_to_update_configs }}"
   notify: reset connection
 
 - name: flush handlers

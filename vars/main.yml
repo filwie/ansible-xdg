@@ -1,44 +1,54 @@
 ---
 xdg_environment:
-  BASH_COMPLETION_USER_FILE: '$XDG_CONFIG_HOME/bash-completion/bash_completion'
-  LESSHISTFILE: '$XDG_DATA_HOME/lesshst'
-  CARGO_HOME: '$XDG_DATA_HOME/cargo'
-  RUSTUP_HOME: '$XDG_DATA_HOME/rustup'
-  JUPYTER_CONFIG_DIR: '$XDG_CONFIG_HOME/jupyter'
-  IPYTHONDIR: '$XDG_CONFIG_HOME/ipython'
-  PYTHON_EGG_CACHE: '$XDG_CACHE_HOME/python-eggs'
-  NODE_REPL_HISTORY: '$XDG_DATA_HOME/node_repl_history'
-  NPM_CONFIG_USERCONFIG: '$XDG_CONFIG_HOME/npm/npmrc'
-  MYSQL_HISTFILE: '$XDG_DATA_HOME/mysql_history'
-  _JAVA_OPTIONS: '-Djava.util.prefs.userRoot=$XDG_CONFIG_HOME/java'
-  DOCKER_CONFIG: '$XDG_CONFIG_HOME/docker'
-  MACHINE_STORAGE_PATH: '$XDG_DATA_HOME/docker-machine'
-  GTK_RC_FILES: '$XDG_CONFIG_HOME/gtk-1.0/gtkrc'
-  GTK2_RC_FILES: '$XDG_CONFIG_HOME/gtk-2.0/gtkrc'
-  TERMINFO: '$XDG_DATA_HOME/terminfo'
-  TERMINFO_DIRS: '$XDG_DATA_HOME/terminfo:/usr/share/terminfo'
-  XCOMPOSEFILE: '$XDG_CONFIG_HOME/X11/xcompose'
-  XCOMPOSECACHE: '$XDG_CACHE_HOME/X11/xcompose'
-  GNUPGHOME: '$XDG_DATA_HOME/gnupg'
-  TMUX_TMPDIR: '$XDG_RUNTIME_DIR'
-  WINEPREFIX: '$XDG_DATA_HOME/wineprefixes/default'  # MUST BE CREATED
-  VAGRANT_HOME: '$XDG_DATA_HOME/vagrant'
-  VAGRANT_ALIAS_FILE: '$XDG_DATA_HOME/vagrant/aliases'
+  BASH_COMPLETION_USER_FILE: "$XDG_CONFIG_HOME/bash-completion/bash_completion"
+  LESSHISTFILE: "$XDG_DATA_HOME/lesshst"
+  CARGO_HOME: "$XDG_DATA_HOME/cargo"
+  RUSTUP_HOME: "$XDG_DATA_HOME/rustup"
+  JUPYTER_CONFIG_DIR: "$XDG_CONFIG_HOME/jupyter"
+  IPYTHONDIR: "$XDG_CONFIG_HOME/ipython"
+  PYTHON_EGG_CACHE: "$XDG_CACHE_HOME/python-eggs"
+  NODE_PATH: "$XDG_DATA_HOME/node"
+  NODE_REPL_HISTORY: "$XDG_DATA_HOME/node/node_repl_history"
+  NPM_CONFIG_USERCONFIG: "$XDG_CONFIG_HOME/npm/npmrc"
+  MYSQL_HISTFILE: "$XDG_DATA_HOME/mysql_history"
+  _JAVA_OPTIONS: "-Djava.util.prefs.userRoot=$XDG_CONFIG_HOME/java"
+  DOCKER_CONFIG: "$XDG_CONFIG_HOME/docker"
+  MACHINE_STORAGE_PATH: "$XDG_DATA_HOME/docker-machine"
+  GTK_RC_FILES: "$XDG_CONFIG_HOME/gtk-1.0/gtkrc"
+  GTK2_RC_FILES: "$XDG_CONFIG_HOME/gtk-2.0/gtkrc"
+  TERMINFO: "$XDG_DATA_HOME/terminfo"
+  TERMINFO_DIRS: "$XDG_DATA_HOME/terminfo:/usr/share/terminfo"
+  XCOMPOSEFILE: "$XDG_CONFIG_HOME/X11/xcompose"
+  XCOMPOSECACHE: "$XDG_CACHE_HOME/X11/xcompose"
+  GNUPGHOME: "$XDG_DATA_HOME/gnupg"
+  TMUX_TMPDIR: "$XDG_RUNTIME_DIR"
+  WINEPREFIX: "$XDG_DATA_HOME/wineprefixes/default"  # MUST BE CREATED
+  VAGRANT_HOME: "$XDG_DATA_HOME/vagrant"
+  VAGRANT_ALIAS_FILE: "$XDG_DATA_HOME/vagrant/aliases"
+
+# TODO (filwie): add logic for determining if it is desired to modify Homebrew or OS configs
+xdg_global_prefix: "{{ ansible_env.HOMEBREW_PREFIX | default('/usr/local')
+                       if ansible_os_family == 'Darwin'
+                       else '' }}"
+
+xdg_become_to_update_configs: "{{ true if xdg_config_scope == 'global'
+                                  and ansible_os_family != 'Darwin'
+                                  else false }}"
 
 xdg_zsh_global_config: "{{ '/etc/zsh/zshenv'
                            if ansible_distribution == 'Arch Linux'
                            else '/etc/zshenv' }}"
 xdg_zsh_config:
-  global: "{{ xdg_zsh_global_config }}"
+  global: "{{ xdg_global_prefix }}{{ xdg_zsh_global_config }}"
   local: "{{ ansible_env.HOME }}/.zshenv"
 
 xdg_bash_config:
-  global: "/etc/profile"
+  global: "{{ xdg_global_prefix }}/etc/profile"
   local: "{{ ansible_env.HOME }}/.profile"
 
 xdg_fish_config:
-  global: "/etc/fish/conf.d/00-xdg.fish"
-  local: "{{ xdg_spec.XDG_CONFIG_HOME }}/fish/conf.d/00-xdg.fish"
+  global: "{{ xdg_global_prefix }}/etc/fish/config.fish"
+  local: "{{ xdg_spec.XDG_CONFIG_HOME }}/fish/conf.d/000-xdg.fish"
 
 xdg_npmrc: "{{ xdg_spec.XDG_CONFIG_HOME }}/npm/npmrc"
 
@@ -67,16 +77,16 @@ xdg_update_configs:
     path: "{{ xdg_fish_config[xdg_config_scope] }}"
     block: |
       {% for k, v in xdg_spec.items() -%}
-        set -x {{ k }} {{ v }}
+        set -gx {{ k }} {{ v }}
       {% endfor %}
       {% for k, v in xdg_environment.items() -%}
-        set -x {{ k }} {{ v }}
+        set -gx {{ k }} {{ v }}
       {% endfor %}
 
   - name: npm
     path: "{{ xdg_npmrc }}"
     block: |
-      prefix=${XDG_DATA_HOME}/npm
-      cache=${XDG_CACHE_HOME}/npm
-      tmp=${XDG_RUNTIME_DIR}/npm
-      init-module=${XDG_CONFIG_HOME}/npm/config/npm-init.js
+      prefix = ${XDG_DATA_HOME}/npm
+      cache = ${XDG_CACHE_HOME}/npm
+      tmp = ${XDG_RUNTIME_DIR}/npm
+      init-module = ${XDG_CONFIG_HOME}/npm/config/npm-init.js
